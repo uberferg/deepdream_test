@@ -1,2 +1,4 @@
 *.pyc
 *.caffemodel
+*.tar.gz
+*.bak
