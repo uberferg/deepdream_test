@@ -17,13 +17,13 @@ def showarray(a, saveName = "output",fmt='jpeg'):
     a = np.uint8(np.clip(a, 0, 255))
     f = StringIO()
     img = PIL.Image.fromarray(a)
-    img.save(saveName + ".jpg")
+    img.save("/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/AlexNetPlacePrior/" + saveName + ".jpg")
     #PIL.Image.fromarray(a)save(f, fmt)
     #display(Image(data=f.getvalue()))
 
-model_path = './models/bvlc_googlenet/' # substitute your path here
+model_path = '/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/models/bvlc_alexnetPlace/' # substitute your path here
 net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + 'bvlc_googlenet.caffemodel'
+param_fn = model_path + 'bvlc_alexnetPlace.caffemodel'
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -45,7 +45,7 @@ def deprocess(net, img):
 def objective_L2(dst):
     dst.diff[:] = dst.data
 
-def make_step(net, step_size=1.5, end='inception_4c/output',
+def make_step(net, step_size=1.5, end='pool5',
               jitter=32, clip=True, objective=objective_L2):
     '''Basic gradient ascent step.'''
 
@@ -69,7 +69,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',
         src.data[:] = np.clip(src.data, -bias, 255-bias)
 
 def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
-              end='inception_4c/output', clip=True, **step_params):
+              end='pool5', clip=True, **step_params):
     # prepare base images for all octaves
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n-1):
@@ -103,10 +103,10 @@ def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
     showarray(vis, picName)
     return deprocess(net, src.data[0])
 #for networkName in ["bvlc_alexnetPlace", "bvlc_googlenet", "bvlc_alexnet"]:
-networkName = "bvlc_googlenet"
-model_path = './models/' + networkName + "/" # substitute your path here
-net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + networkName + ".caffemodel"
+#networkName = "bvlc_alexnet"
+#model_path = '/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/models/' + networkName + "/" # substitute your path here
+#net_fn   = model_path + 'deploy.prototxt'
+#param_fn = model_path + networkName + ".caffemodel"
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -119,7 +119,29 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
-for imgName in range(0,10):
-    img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))
-    #showarray(img)
-    _=deepdream(net, img, "rand" + str(imgName) + "Output")
+for priorImage in ["baseball", "bedroom", "canyon", "city", "car", "chair", "dog", "forest_castle"]:
+    # Load prior image
+    guide = np.float32(PIL.Image.open("/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/project_code/input_files/priors/"+ priorImage +'.jpg'))
+    end = 'pool5'
+    h, w = guide.shape[:2]
+    src, dst = net.blobs['data'], net.blobs[end]
+    src.reshape(1,3,h,w)
+    src.data[0] = preprocess(net, guide)
+    net.forward(end=end)
+    guide_features = dst.data[0].copy()
+
+
+    # Guide the objective of the nn
+    def objective_guide(dst):
+        x = dst.data[0].copy()
+        y = guide_features
+        ch = x.shape[0]
+        x = x.reshape(ch,-1)
+        y = y.reshape(ch,-1)
+        A = x.T.dot(y) # compute the matrix of dot-products with guide features
+        dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select ones that match best
+
+    for imgName in range(0,10):
+        img = np.float32(PIL.Image.open("./input_files/random/rand"+ str(imgName) +".jpg"))
+        #showarray(img)
+        _=deepdream(net, img, "rand" + str(imgName)+ priorImage + "Output", end = end, objective = objective_guide)
