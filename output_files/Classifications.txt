@@ -1,0 +1,37 @@
+
+Baseball:
+predicted class: 429 = Baseball; Confidence = 1.0
+
+Bedroom:
+predicted class: 706 = patio, terrace; Confidence = 0.42
+
+Canyon:
+predicted class: 500 = Cliff Dwelling; Confidence = 0.48
+
+City:
+predicted class: 839 = suspension bridge; Confidence = 0.25
+
+Car:
+predicted class: 817 = sports car, sport car; Confidence = 0.9
+
+Chair:
+predicted class: 765 = rocking chair, rocker; Confidence = 0.70
+
+Dog:
+predicted class: 162 = beagle; Confidence = 0.90
+
+Forest_Castle:
+predicted class: 483 = castle; Confidence = 0.90
+
+
+
+\begin{tabular}[c | c | c]
+Baseball & Baseball & 1.0 \\
+Bedroom & Patio, Terrace & 0.42 \\
+Canyon & Cliff Dwelling & 0.48 \\
+City & suspension bridge & 0.25 \\
+Car & Sports car & 0.9 \\
+Chair & rocking chair & 0.70 \\
+Dog & beagle & 0.9 \\
+Forest_Castle & Castle & 0.9\\
+\end{tabular}

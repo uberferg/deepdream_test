@@ -17,7 +17,7 @@ def showarray(a, saveName = "output",fmt='jpeg'):
     a = np.uint8(np.clip(a, 0, 255))
     f = StringIO()
     img = PIL.Image.fromarray(a)
-    img.save("/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/GoogLeNetPlacesPrior/" + saveName + ".jpg")
+    img.save("/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/project_code/GooLeNetPlacesPrior" + saveName + ".jpg")
     #PIL.Image.fromarray(a)save(f, fmt)
     #display(Image(data=f.getvalue()))
 
