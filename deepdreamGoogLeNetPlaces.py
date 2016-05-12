@@ -1,10 +1,3 @@
-###############################################################################
-#
-# deepdreamGoogLe.py
-#  - test script for GoogLeNet trained on ImageNet
-#
-###############################################################################
-
 # imports and basic notebook setup
 from cStringIO import StringIO
 import numpy as np
@@ -12,6 +5,7 @@ import scipy.ndimage as nd
 import PIL.Image
 from IPython.display import clear_output, Image, display
 from google.protobuf import text_format
+
 import caffe
 
 # If your GPU supports CUDA and Caffe was built with CUDA support,
@@ -27,9 +21,9 @@ def showarray(a, saveName = "output",fmt='jpeg'):
     #PIL.Image.fromarray(a)save(f, fmt)
     #display(Image(data=f.getvalue()))
 
-model_path = './models/bvlc_googlenet/' # substitute your path here
-net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + 'bvlc_googlenet.caffemodel'
+model_path = '/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/project_code/models/googlenet_places205/' # substitute your path here
+net_fn   = model_path + 'deploy_places205.protxt'
+param_fn = model_path + 'googlelet_places205_train_iter_2400000.caffemodel'
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -109,10 +103,10 @@ def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
     showarray(vis, picName)
     return deprocess(net, src.data[0])
 #for networkName in ["bvlc_alexnetPlace", "bvlc_googlenet", "bvlc_alexnet"]:
-networkName = "bvlc_googlenet"
-model_path = './models/' + networkName + "/" # substitute your path here
-net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + networkName + ".caffemodel"
+# networkName = "bvlc_alexnet"
+# model_path = './models/' + networkName + "/" # substitute your path here
+# net_fn   = model_path + 'deploy.prototxt'
+# param_fn = model_path + networkName + ".caffemodel"
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -124,6 +118,16 @@ open('tmp.prototxt', 'w').write(str(model))
 net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
+
+# Guide the objective of the nn
+def objective_guide(dst):
+    x = dst.data[0].copy()
+    y = guide_features
+    ch = x.shape[0]
+    x = x.reshape(ch,-1)
+    y = y.reshape(ch,-1)
+    A = x.T.dot(y) # compute the matrix of dot-products with guide features
+    dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select ones that match best
 
 for imgName in range(0,10):
     img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))

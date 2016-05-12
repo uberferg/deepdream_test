@@ -1,10 +1,3 @@
-###############################################################################
-#
-# deepdreamGoogLe.py
-#  - test script for GoogLeNet trained on ImageNet
-#
-###############################################################################
-
 # imports and basic notebook setup
 from cStringIO import StringIO
 import numpy as np
@@ -12,6 +5,7 @@ import scipy.ndimage as nd
 import PIL.Image
 from IPython.display import clear_output, Image, display
 from google.protobuf import text_format
+
 import caffe
 
 # If your GPU supports CUDA and Caffe was built with CUDA support,
@@ -27,20 +21,20 @@ def showarray(a, saveName = "output",fmt='jpeg'):
     #PIL.Image.fromarray(a)save(f, fmt)
     #display(Image(data=f.getvalue()))
 
-model_path = './models/bvlc_googlenet/' # substitute your path here
-net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + 'bvlc_googlenet.caffemodel'
-
-# Patching model to be able to compute gradients.
-# Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
-model = caffe.io.caffe_pb2.NetParameter()
-text_format.Merge(open(net_fn).read(), model)
-model.force_backward = True
-open('tmp.prototxt', 'w').write(str(model))
-
-net = caffe.Classifier('tmp.prototxt', param_fn,
-                       mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
-                       channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
+# model_path = './models/bvlc_googlenet/' # substitute your path here
+# net_fn   = model_path + 'deploy.prototxt'
+# param_fn = model_path + 'bvlc_g.caffemodel'
+#
+# # Patching model to be able to compute gradients.
+# # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
+# model = caffe.io.caffe_pb2.NetParameter()
+# text_format.Merge(open(net_fn).read(), model)
+# model.force_backward = True
+# open('tmp.prototxt', 'w').write(str(model))
+#
+# net = caffe.Classifier('tmp.prototxt', param_fn,
+#                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
+#                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
 # a couple of utility functions for converting to and from Caffe's input image layout
 def preprocess(net, img):
@@ -51,7 +45,7 @@ def deprocess(net, img):
 def objective_L2(dst):
     dst.diff[:] = dst.data
 
-def make_step(net, step_size=1.5, end='inception_4c/output',
+def make_step(net, step_size=1.5, end='pool5',
               jitter=32, clip=True, objective=objective_L2):
     '''Basic gradient ascent step.'''
 
@@ -75,7 +69,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',
         src.data[:] = np.clip(src.data, -bias, 255-bias)
 
 def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
-              end='inception_4c/output', clip=True, **step_params):
+              end='pool5', clip=True, **step_params):
     # prepare base images for all octaves
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n-1):
@@ -109,8 +103,8 @@ def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
     showarray(vis, picName)
     return deprocess(net, src.data[0])
 #for networkName in ["bvlc_alexnetPlace", "bvlc_googlenet", "bvlc_alexnet"]:
-networkName = "bvlc_googlenet"
-model_path = './models/' + networkName + "/" # substitute your path here
+networkName = "bvlc_alexnet"
+model_path = '/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/models/' + networkName + "/" # substitute your path here
 net_fn   = model_path + 'deploy.prototxt'
 param_fn = model_path + networkName + ".caffemodel"
 
@@ -125,7 +119,7 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
-for imgName in range(0,10):
-    img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))
+for imgName in ["baseball", "bedroom", "canyon", "city", "car", "chair", "dog", "forest_castle"]:
+    img = np.float32(PIL.Image.open("/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/project_code/input_files/priors/"+ imgName + ".jpg"))
     #showarray(img)
-    _=deepdream(net, img, "rand" + str(imgName) + "Output")
+    _=deepdream(net, img, imgName + networkName + "Output")

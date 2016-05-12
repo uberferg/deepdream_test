@@ -21,9 +21,9 @@ def showarray(a, saveName = "output",fmt='jpeg'):
     #PIL.Image.fromarray(a)save(f, fmt)
     #display(Image(data=f.getvalue()))
 
-model_path = './models/bvlc_googlenet/' # substitute your path here
+model_path = '/home/christopher/Dropbox/2015-16PrincetonUniversity/COS495/Final Project/models/bvlc_alexnetPlace/' # substitute your path here
 net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + 'bvlc_googlenet.caffemodel'
+param_fn = model_path + 'bvlc_alexnetPlace.caffemodel'
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -102,11 +102,7 @@ def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
     # returning the resulting image
     showarray(vis, picName)
     return deprocess(net, src.data[0])
-#for networkName in ["bvlc_alexnetPlace", "bvlc_googlenet", "bvlc_alexnet"]:
-networkName = "bvlc_alexnetPlace"
-model_path = './models/' + networkName + "/" # substitute your path here
-net_fn   = model_path + 'deploy.prototxt'
-param_fn = model_path + networkName + ".caffemodel"
+
 
 # Patching model to be able to compute gradients.
 # Note that you can also manually add "force_backward: true" line to "deploy.prototxt".
@@ -119,7 +115,7 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
-for imgName in range(0,9):
+for imgName in range(0,10):
     img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))
     #showarray(img)
-    _=deepdream(net, img, "rand" + str(imgName) + networkName)
+    _=deepdream(net, img, "rand" + str(imgName) + "AlexNetPlaces")

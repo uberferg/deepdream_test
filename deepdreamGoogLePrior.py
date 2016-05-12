@@ -1,10 +1,3 @@
-###############################################################################
-#
-# deepdreamGoogLe.py
-#  - test script for GoogLeNet trained on ImageNet
-#
-###############################################################################
-
 # imports and basic notebook setup
 from cStringIO import StringIO
 import numpy as np
@@ -12,6 +5,7 @@ import scipy.ndimage as nd
 import PIL.Image
 from IPython.display import clear_output, Image, display
 from google.protobuf import text_format
+
 import caffe
 
 # If your GPU supports CUDA and Caffe was built with CUDA support,
@@ -51,7 +45,7 @@ def deprocess(net, img):
 def objective_L2(dst):
     dst.diff[:] = dst.data
 
-def make_step(net, step_size=1.5, end='inception_4c/output',
+def make_step(net, step_size=1.5, end='pool5',
               jitter=32, clip=True, objective=objective_L2):
     '''Basic gradient ascent step.'''
 
@@ -75,7 +69,7 @@ def make_step(net, step_size=1.5, end='inception_4c/output',
         src.data[:] = np.clip(src.data, -bias, 255-bias)
 
 def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
-              end='inception_4c/output', clip=True, **step_params):
+              end='pool5', clip=True, **step_params):
     # prepare base images for all octaves
     octaves = [preprocess(net, base_img)]
     for i in xrange(octave_n-1):
@@ -109,7 +103,7 @@ def deepdream(net, base_img, picName,iter_n=20, octave_n=4, octave_scale=1.4,
     showarray(vis, picName)
     return deprocess(net, src.data[0])
 #for networkName in ["bvlc_alexnetPlace", "bvlc_googlenet", "bvlc_alexnet"]:
-networkName = "bvlc_googlenet"
+networkName = "bvlc_alexnet"
 model_path = './models/' + networkName + "/" # substitute your path here
 net_fn   = model_path + 'deploy.prototxt'
 param_fn = model_path + networkName + ".caffemodel"
@@ -125,7 +119,17 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
-for imgName in range(0,10):
+# Guide the objective of the nn
+def objective_guide(dst):
+    x = dst.data[0].copy()
+    y = guide_features
+    ch = x.shape[0]
+    x = x.reshape(ch,-1)
+    y = y.reshape(ch,-1)
+    A = x.T.dot(y) # compute the matrix of dot-products with guide features
+    dst.diff[0].reshape(ch,-1)[:] = y[:,A.argmax(1)] # select ones that match best
+
+for imgName in range(0,9):
     img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))
     #showarray(img)
-    _=deepdream(net, img, "rand" + str(imgName) + "Output")
+    _=deepdream(net, img, "rand" + str(imgName) + "Output", end = end, objective = objective_guide)

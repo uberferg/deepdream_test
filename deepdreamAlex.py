@@ -119,7 +119,7 @@ net = caffe.Classifier('tmp.prototxt', param_fn,
                        mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                        channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
 
-for imgName in range(0,9):
+for imgName in range(0,10):
     img = np.float32(PIL.Image.open("rand"+ str(imgName) +".jpg"))
     #showarray(img)
     _=deepdream(net, img, "rand" + str(imgName) + networkName)
